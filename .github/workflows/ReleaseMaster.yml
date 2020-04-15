@@ -1,0 +1,60 @@
+name: ReleaseMaster
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    types: [ closed ]
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+    steps:
+    - name: Start
+      run: echo 'Started at ${{ steps.start.outputs.time }}.'
+      id: start
+    - name: Checkout
+      uses: actions/checkout@v2
+      id: co
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+      id: setup
+    - name: Install dependencies
+      run: dotnet restore
+      id: restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      id: build
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
+      id: test
+    - name: Finish
+      run: echo 'Finished at ${{ steps.finish.outputs.time }}.'
+      id: finish
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Start
+      run: echo 'Started at ${{ steps.start.outputs.time }}.'
+      id: start
+    - name: Checkout
+      uses: actions/checkout@v2
+      id: co
+    - name: Pack NuGet package
+      run: dotnet pack --configuration Release
+      id: pack
+    - name: Publish the package to NuGet
+      run: dotnet nuget push **/*.nupkg --api-key ${{secrets.NUGET_API_KEY_DEFAULT}} --source https://api.nuget.org/v3/index.json
+      id: publish
+    - name: Finish
+      run: echo 'Finished at ${{ steps.finish.outputs.time }}.'
+      id: finish
