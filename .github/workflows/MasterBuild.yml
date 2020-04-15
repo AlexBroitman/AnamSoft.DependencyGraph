@@ -1,4 +1,4 @@
-name: ReleaseMaster
+name: MasterBuild
 
 on:
   push:
